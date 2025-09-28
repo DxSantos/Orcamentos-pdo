@@ -3,7 +3,7 @@ require __DIR__ . '/../config.php';
 require '_header.php';
 
 $fornecedores = $pdo->query("SELECT * FROM fornecedores ORDER BY nome_fantasia")->fetchAll(PDO::FETCH_ASSOC);
-$produtos = $pdo->query("SELECT * FROM produtos ORDER BY nome")->fetchAll(PDO::FETCH_ASSOC);
+$materiaPri = $pdo->query("SELECT * FROM materiaPri ORDER BY nome")->fetchAll(PDO::FETCH_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fornecedor_id = (int) ($_POST['fornecedor_id'] ?? 0);
@@ -14,9 +14,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Limpa base antiga do fornecedor
         $pdo->prepare("DELETE FROM orcamento_base WHERE fornecedor_id=?")->execute([$fornecedor_id]);
 
-        $stmt = $pdo->prepare("INSERT INTO orcamento_base (fornecedor_id, produto_id) VALUES (?,?)");
-        foreach ($itens as $produto_id) {
-            $stmt->execute([$fornecedor_id, $produto_id]);
+        $stmt = $pdo->prepare("INSERT INTO orcamento_base (fornecedor_id, materiaPri_id) VALUES (?,?)");
+        foreach ($itens as $materiaPri_id) {
+            $stmt->execute([$fornecedor_id, $materiaPri_id]);
         }
 
         $pdo->commit();
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <table class="table table-bordered" id="itensBaseTable">
         <thead>
             <tr>
-                <th>Produto</th>
+                <th>Itens</th>
                 <th></th>
             </tr>
         </thead>
@@ -57,23 +57,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </form>
 
 <script>
-const PRODUTOS = <?php echo json_encode($produtos, JSON_UNESCAPED_UNICODE); ?>;
+const materiaPri = <?php echo json_encode($materiaPri, JSON_UNESCAPED_UNICODE); ?>;
 const tabelaItensBase = document.querySelector('#itensBaseTable tbody');
 const fornecedorSelect = document.getElementById('fornecedorSelect');
 
-function addRowBase(produtoId = '') {
+function addRowBase(materiaPriId = '') {
     const tr = document.createElement('tr');
     tr.innerHTML = `
         <td>
-            <select class="form-select form-select-sm produto-select">
+            <select class="form-select form-select-sm materiaPri-select">
                 <option value="">Selecione...</option>
-                ${PRODUTOS.map(p => `<option value="${p.id}">${p.nome}</option>`).join('')}
+                ${materiaPri.map(p => `<option value="${p.id}">${p.nome}</option>`).join('')}
             </select>
         </td>
         <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">×</button></td>
     `;
     tabelaItensBase.appendChild(tr);
-    if(produtoId) tr.querySelector('select').value = produtoId;
+    if(materiaPriId) tr.querySelector('select').value = materiaPriId;
 }
 
 // Carrega itens ao escolher fornecedor
@@ -86,18 +86,18 @@ fornecedorSelect.addEventListener('change', () => {
     fetch(`get_orcamento_base.php?fornecedor_id=${fornecedorId}`)
         .then(res => res.json())
         .then(itens => {
-            itens.forEach(item => addRowBase(item.produto_id));
+            itens.forEach(item => addRowBase(item.materiaPri_id));
         });
 });
 
 function beforeSubmitBase(){
-    const produtosSelecionados = [];
+    const materiaPriSelecionados = [];
     document.querySelectorAll('#itensBaseTable tbody tr').forEach(tr => {
-        const produto_id = tr.querySelector('select').value;
-        if(produto_id) produtosSelecionados.push(parseInt(produto_id));
+        const materiaPri_id = tr.querySelector('select').value;
+        if(materiaPri_id) materiaPriSelecionados.push(parseInt(materiaPri_id));
     });
-    if(produtosSelecionados.length === 0){ alert('Adicione pelo menos um item'); return false; }
-    document.getElementById('itens_json').value = JSON.stringify(produtosSelecionados);
+    if(materiaPriSelecionados.length === 0){ alert('Adicione pelo menos um item'); return false; }
+    document.getElementById('itens_json').value = JSON.stringify(materiaPriSelecionados);
     return true;
 }
 </script>

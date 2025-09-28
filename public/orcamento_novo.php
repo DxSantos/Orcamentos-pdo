@@ -20,16 +20,16 @@ if ($id) {
     $sti = $pdo->prepare("
         SELECT oi.*, p.nome, p.preco_unitario AS preco_cadastro, p.unidade_medida AS unidade_cadastro
         FROM orcamento_itens oi 
-        LEFT JOIN produtos p ON p.id=oi.produto_id 
+        LEFT JOIN materiaPri p ON p.id=oi.materiaPri_id 
         WHERE oi.orcamento_id=?
     ");
     $sti->execute([$id]);
     $itens = $sti->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// Lista fornecedores e produtos
+// Lista fornecedores e materiaPri
 $fornecedores = $pdo->query("SELECT * FROM fornecedores ORDER BY nome_fantasia")->fetchAll(PDO::FETCH_ASSOC);
-$produtos = $pdo->query("SELECT * FROM produtos ORDER BY nome")->fetchAll(PDO::FETCH_ASSOC);
+$materiaPri = $pdo->query("SELECT * FROM materiaPri ORDER BY nome")->fetchAll(PDO::FETCH_ASSOC);
 
 // Salvar
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -62,28 +62,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Salvar itens
         $rows = json_decode($_POST['itens_json'] ?? '[]', true);
         foreach ($rows as $r) {
-            $produto_id = $r['produto_id'] ?? null;
+            $materiaPri_id = $r['materiaPri_id'] ?? null;
             $qtemb      = $r['qtemb'] ?? '';
             $um         = $r['unidade_medida'] ?? 'un';
             $qtd        = (float) ($r['quantidade'] ?? 1);
             $preco      = (float) ($r['preco_unitario'] ?? 0);
             $total      = $qtd * $preco;
 
-            if ($produto_id && $status === 'Em Andamento') {
-                $st = $pdo->prepare("SELECT preco_unitario, unidade_medida FROM produtos WHERE id=?");
-                $st->execute([$produto_id]);
+            if ($materiaPri_id && $status === 'Em Andamento') {
+                $st = $pdo->prepare("SELECT preco_unitario, unidade_medida FROM materiaPri WHERE id=?");
+                $st->execute([$materiaPri_id]);
                 $p = $st->fetch(PDO::FETCH_ASSOC);
                 if ($p && ((float)$p['preco_unitario'] !== $preco || $p['unidade_medida'] !== $um)) {
-                    $pdo->prepare("UPDATE produtos SET preco_unitario=?, unidade_medida=?, updated_at=NOW() WHERE id=?")
-                        ->execute([$preco, $um, $produto_id]);
+                    $pdo->prepare("UPDATE materiaPri SET preco_unitario=?, unidade_medida=?, updated_at=NOW() WHERE id=?")
+                        ->execute([$preco, $um, $materiaPri_id]);
                 }
             }
 
             $pdo->prepare("
                 INSERT INTO orcamento_itens 
-                (orcamento_id, produto_id, qtemb, unidade_medida, quantidade, preco_unitario, total) 
+                (orcamento_id, materiaPri_id, qtemb, unidade_medida, quantidade, preco_unitario, total) 
                 VALUES (?,?,?,?,?,?,?)
-            ")->execute([$oid, $produto_id, $qtemb, $um, $qtd, $preco, $total]);
+            ")->execute([$oid, $materiaPri_id, $qtemb, $um, $qtd, $preco, $total]);
         }
 
         $pdo->commit();
@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($_POST['salvar_pdf']) && $_POST['salvar_pdf'] === '1') {
             // Carrega dados do orçamento novamente
             $orcamento = $pdo->query("SELECT o.*, f.nome_fantasia, f.razao_social FROM orcamentos o JOIN fornecedores f ON f.id=o.fornecedor_id WHERE o.id=$oid")->fetch();
-            $itens = $pdo->query("SELECT oi.*, p.nome FROM orcamento_itens oi LEFT JOIN produtos p ON p.id=oi.produto_id WHERE oi.orcamento_id=$oid")->fetchAll();
+            $itens = $pdo->query("SELECT oi.*, p.nome FROM orcamento_itens oi LEFT JOIN materiaPri p ON p.id=oi.materiaPri_id WHERE oi.orcamento_id=$oid")->fetchAll();
 
             // Criar pasta pdfs se não existir
             if (!is_dir(__DIR__ . '/../pdfs')) mkdir(__DIR__ . '/../pdfs', 0777, true);
@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Itens
             $pdf->SetFont('Arial','B',12);
-            $pdf->Cell(80,6,"Produto",1);
+            $pdf->Cell(80,6,"materiaPri",1);
             $pdf->Cell(20,6,"Qtd",1,0,'C');
             $pdf->Cell(30,6,"Unidade",1,0,'C');
             $pdf->Cell(30,6,"Preço",1,0,'C');
@@ -195,13 +195,13 @@ require '_header.php';
   <!-- ITENS -->
   <div class="card shadow-sm p-3 mb-3">
     <div class="d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">Itens</h5>
+      <h5 class="mb-0">ITENS DO ORÇAMENTO</h5>
       <button type="button" class="btn btn-sm btn-outline-success" onclick="addRow()">+ Adicionar item</button>
     </div>
     <div class="table-responsive mt-2">
       <table class="table align-middle" id="itensTable">
         <thead><tr>
-          <th style="min-width: 220px;">Produto</th>
+          <th style="min-width: 220px;">ITENS</th>
           <th>QUAT. EMBAL.</th>
           <th>UM</th>
           <th>Qtd</th>
@@ -241,7 +241,7 @@ require '_header.php';
 </form>
 
 <script>
-const PRODUTOS = <?php echo json_encode($produtos, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES); ?>;
+const materiaPri = <?php echo json_encode($materiaPri, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES); ?>;
 const ITENS = <?php echo json_encode($itens, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES); ?>;
 
 function currency(v){ return (v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
@@ -250,9 +250,9 @@ function addRow(data={}){
   const tr = document.createElement('tr');
   const tdProd = document.createElement('td');
   const sel = document.createElement('select');
-  sel.className = 'form-select form-select-sm produto-select';
+  sel.className = 'form-select form-select-sm materiaPri-select';
   sel.innerHTML = '<option value="">Selecione...</option>';
-  for (const p of PRODUTOS) {
+  for (const p of materiaPri) {
     const opt = new Option(p.nome, p.id);
     opt.dataset.preco = p.preco_unitario;
     opt.dataset.um = p.unidade_medida;
@@ -278,7 +278,7 @@ function addRow(data={}){
   tr.prepend(tdProd);
   document.getElementById('tbodyItens').appendChild(tr);
 
-  if(data.produto_id){ sel.value = data.produto_id; }
+  if(data.materiaPri_id){ sel.value = data.materiaPri_id; }
   calcRow(tr); checkAlterado(tr);
 }
 
@@ -300,7 +300,7 @@ function calcTotal(){
 }
 
 function checkAlterado(tr){
-  const sel=tr.querySelector('.produto-select');
+  const sel=tr.querySelector('.materiaPri-select');
   if(!sel || !sel.selectedOptions[0]) return;
   const precoOriginal=parseFloat(sel.selectedOptions[0].dataset.preco||0);
   const umOriginal=sel.selectedOptions[0].dataset.um||'';
@@ -318,13 +318,13 @@ function beforeSubmit(){
   const items=[];
   for(const tr of document.querySelectorAll('#tbodyItens tr')){
     const sel=tr.querySelector('select');
-    const produto_id=sel && sel.value ? parseInt(sel.value) : null;
+    const materiaPri_id=sel && sel.value ? parseInt(sel.value) : null;
     const qtemb=tr.querySelector('.qtemb')?.value || '';
     const unidade_medida=tr.querySelector('.um').value||'un';
     const quantidade=parseFloat(tr.querySelector('.qtd').value||0);
     const preco_unitario=parseFloat(tr.querySelector('.preco').value||0);
-    if(!produto_id && !qtemb) continue;
-    items.push({produto_id,qtemb,unidade_medida,quantidade,preco_unitario});
+    if(!materiaPri_id && !qtemb) continue;
+    items.push({materiaPri_id,qtemb,unidade_medida,quantidade,preco_unitario});
   }
   document.getElementById('itens_json').value=JSON.stringify(items);
   if(items.length===0){alert('Adicione pelo menos um item.');return false;}
@@ -361,7 +361,7 @@ async function importarBase(){
   document.getElementById('tbodyItens').innerHTML = '';
   dados.forEach(it => {
     addRow({
-      produto_id: it.produto_id,
+      materiaPri_id: it.materiaPri_id,
       quantidade: 1,
       unidade_medida: it.unidade_medida,
       preco_unitario: parseFloat(it.preco_unitario)

@@ -12,9 +12,9 @@
   <div class="col-md-6">
     <div class="card shadow-sm">
       <div class="card-body">
-        <h5 class="card-title">Cadastro de Produtos</h5>
-        <p class="card-text">Gerencie produtos, preços e unidades de medida.</p>
-        <a class="btn btn-primary" href="produtos.php">Abrir</a>
+        <h5 class="card-title">Cadastro de materiaPri</h5>
+        <p class="card-text">Gerencie materiaPri, preços e unidades de medida.</p>
+        <a class="btn btn-primary" href="materiaPri.php">Abrir</a>
       </div>
     </div>
   </div>

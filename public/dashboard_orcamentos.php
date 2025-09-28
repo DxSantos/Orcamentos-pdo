@@ -7,7 +7,7 @@ $status     = trim($_GET['status'] ?? '');
 $data_inicio = trim($_GET['data_inicio'] ?? '');
 $data_fim    = trim($_GET['data_fim'] ?? '');
 
-$produto   = trim($_GET['produto'] ?? '');
+$materiaPri   = trim($_GET['materiaPri'] ?? '');
 
 
 // ==================== CONSULTA ORÇAMENTOS ====================
@@ -36,9 +36,9 @@ if ($data_fim !== '') {
     $params[] = $data_fim;
 }
 
-if ($produto !== '') {
-    $sql .= " AND oi.produto_id=?";
-    $params[] = $produto;
+if ($materiaPri !== '') {
+    $sql .= " AND oi.materiaPri_id=?";
+    $params[] = $materiaPri;
 }
 
 $sql .= " GROUP BY o.id ORDER BY o.data_orcamento DESC";
@@ -82,9 +82,9 @@ if ($data_fim !== '') {
     $status_params[] = $data_fim;
 }
 
-if ($produto !== '') {
-    $status_sql .= " AND oi.produto_id=?";
-    $status_params[] = $produto;
+if ($materiaPri !== '') {
+    $status_sql .= " AND oi.materiaPri_id=?";
+    $status_params[] = $materiaPri;
 }
 $status_sql .= " GROUP BY status";
 $st_status = $pdo->prepare($status_sql);
@@ -107,38 +107,38 @@ $fornecedor_sql = "SELECT f.nome_fantasia, SUM(oi.total) AS total
                    GROUP BY f.id";
 $fornecedor_data = $pdo->query($fornecedor_sql)->fetchAll();
 
-// 3. Produtos mais vendidos
-$produtos_sql = "SELECT p.nome, SUM(oi.quantidade) AS qtd
+// 3. materiaPri mais vendidos
+$materiaPri_sql = "SELECT p.nome, SUM(oi.quantidade) AS qtd
                  FROM orcamento_itens oi
-                 JOIN produtos p ON p.id=oi.produto_id
+                 JOIN materiaPri p ON p.id=oi.materiaPri_id
                  JOIN orcamentos o ON o.id=oi.orcamento_id
                  WHERE 1=1";
 $prod_params = [];
 if ($fornecedor !== '') {
-    $produtos_sql .= " AND o.fornecedor_id=?";
+    $materiaPri_sql .= " AND o.fornecedor_id=?";
     $prod_params[] = $fornecedor;
 }
 if ($status !== '') {
-    $produtos_sql .= " AND o.status=?";
+    $materiaPri_sql .= " AND o.status=?";
     $prod_params[] = $status;
 }
 if ($data_inicio !== '') {
-    $produtos_sql .= " AND o.data_orcamento>=?";
+    $materiaPri_sql .= " AND o.data_orcamento>=?";
     $prod_params[] = $data_inicio;
 }
 if ($data_fim !== '') {
-    $produtos_sql .= " AND o.data_orcamento<=?";
+    $materiaPri_sql .= " AND o.data_orcamento<=?";
     $prod_params[] = $data_fim;
 }
 
-if ($produto !== '') {
-    $produtos_sql .= " AND oi.produto_id=?";
-    $prod_params[] = $produto;
+if ($materiaPri !== '') {
+    $materiaPri_sql .= " AND oi.materiaPri_id=?";
+    $prod_params[] = $materiaPri;
 }
-$produtos_sql .= " GROUP BY p.id ORDER BY qtd DESC LIMIT 10";
-$st_prod = $pdo->prepare($produtos_sql);
+$materiaPri_sql .= " GROUP BY p.id ORDER BY qtd DESC LIMIT 10";
+$st_prod = $pdo->prepare($materiaPri_sql);
 $st_prod->execute($prod_params);
-$produtos_data = $st_prod->fetchAll();
+$materiaPri_data = $st_prod->fetchAll();
 
 // 4. Total mensal (linha)
 $mes_sql = "SELECT DATE_FORMAT(o.data_orcamento,'%Y-%m') AS mes, SUM(oi.total) AS total
@@ -163,47 +163,47 @@ if ($data_fim !== '') {
     $mes_params[] = $data_fim;
 }
 
-if ($produto !== '') {
-    $mes_sql .= " AND oi.produto_id=?";
-    $mes_params[] = $produto;
+if ($materiaPri !== '') {
+    $mes_sql .= " AND oi.materiaPri_id=?";
+    $mes_params[] = $materiaPri;
 }
 $mes_sql .= " GROUP BY mes ORDER BY mes ASC";
 $st_mes = $pdo->prepare($mes_sql);
 $st_mes->execute($mes_params);
 $mes_data = $st_mes->fetchAll();
 
-// 5. Valor total por produto
-$produtos_valor_sql = "SELECT p.nome, SUM(oi.total) AS valor
+// 5. Valor total por materiaPri
+$materiaPri_valor_sql = "SELECT p.nome, SUM(oi.total) AS valor
                        FROM orcamento_itens oi
-                       JOIN produtos p ON p.id=oi.produto_id
+                       JOIN materiaPri p ON p.id=oi.materiaPri_id
                        JOIN orcamentos o ON o.id=oi.orcamento_id
                        WHERE 1=1";
 $prod_val_params = [];
 if ($fornecedor !== '') {
-    $produtos_valor_sql .= " AND o.fornecedor_id=?";
+    $materiaPri_valor_sql .= " AND o.fornecedor_id=?";
     $prod_val_params[] = $fornecedor;
 }
 if ($status !== '') {
-    $produtos_valor_sql .= " AND o.status=?";
+    $materiaPri_valor_sql .= " AND o.status=?";
     $prod_val_params[] = $status;
 }
 if ($data_inicio !== '') {
-    $produtos_valor_sql .= " AND o.data_orcamento>=?";
+    $materiaPri_valor_sql .= " AND o.data_orcamento>=?";
     $prod_val_params[] = $data_inicio;
 }
 if ($data_fim !== '') {
-    $produtos_valor_sql .= " AND o.data_orcamento<=?";
+    $materiaPri_valor_sql .= " AND o.data_orcamento<=?";
     $prod_val_params[] = $data_fim;
 }
 
-if ($produto !== '') {
-    $produtos_valor_sql .= " AND oi.produto_id=?";
-    $prod_val_params[] = $produto;
+if ($materiaPri !== '') {
+    $materiaPri_valor_sql .= " AND oi.materiaPri_id=?";
+    $prod_val_params[] = $materiaPri;
 }
-$produtos_valor_sql .= " GROUP BY p.id ORDER BY valor DESC LIMIT 10";
-$st_prod_val = $pdo->prepare($produtos_valor_sql);
+$materiaPri_valor_sql .= " GROUP BY p.id ORDER BY valor DESC LIMIT 10";
+$st_prod_val = $pdo->prepare($materiaPri_valor_sql);
 $st_prod_val->execute($prod_val_params);
-$produtos_valor_data = $st_prod_val->fetchAll();
+$materiaPri_valor_data = $st_prod_val->fetchAll();
 
 
 
@@ -226,13 +226,13 @@ require '_header.php';
         </select>
     </div>
     <div class="col-md-3">
-        <label>Produto</label>
-        <select name="produto" class="form-select">
+        <label>materiaPri</label>
+        <select name="materiaPri" class="form-select">
             <option value="">Todos</option>
             <?php
-            $ps = $pdo->query("SELECT id,nome FROM produtos ORDER BY nome")->fetchAll();
+            $ps = $pdo->query("SELECT id,nome FROM materiaPri ORDER BY nome")->fetchAll();
             foreach ($ps as $p): ?>
-                <option value="<?= $p['id'] ?>" <?= $produto == $p['id'] ? 'selected' : '' ?>>
+                <option value="<?= $p['id'] ?>" <?= $materiaPri == $p['id'] ? 'selected' : '' ?>>
                     <?= htmlspecialchars($p['nome']) ?>
                 </option>
             <?php endforeach; ?>
@@ -280,7 +280,7 @@ require '_header.php';
 <div class="row">
     <div class="col-md-6 mb-4">
         <div class="card p-3">
-            <canvas id="produtosChart"></canvas>
+            <canvas id="materiaPriChart"></canvas>
         </div>
     </div>
 
@@ -288,7 +288,7 @@ require '_header.php';
 
     <div class="col-md-6 mb-4">
         <div class="card p-3">
-            <canvas id="produtosValorChart"></canvas>
+            <canvas id="materiaPriValorChart"></canvas>
         </div>
     </div>
 
@@ -437,16 +437,16 @@ new Chart(ctx, {
         plugins: [ChartDataLabels]
     });
 
-    // Produtos mais vendidos (Horizontal Bar)
-    new Chart(document.getElementById('produtosChart'), {
+    // materiaPri mais vendidos (Horizontal Bar)
+    new Chart(document.getElementById('materiaPriChart'), {
         type: 'bar',
         data: {
-            labels: <?= json_encode(array_column($produtos_data, 'nome')) ?>,
+            labels: <?= json_encode(array_column($materiaPri_data, 'nome')) ?>,
             datasets: [{
                 label: 'Quantidade',
                 data: <?= json_encode(array_map(function ($p) {
                             return floatval($p['qtd']);
-                        }, $produtos_data)) ?>,
+                        }, $materiaPri_data)) ?>,
                 backgroundColor: '#f59e0b'
             }]
         },
@@ -511,16 +511,16 @@ new Chart(ctx, {
         plugins: [ChartDataLabels]
     });
 
-    // Valor total por produto (Horizontal Bar)
-    new Chart(document.getElementById('produtosValorChart'), {
+    // Valor total por materiaPri (Horizontal Bar)
+    new Chart(document.getElementById('materiaPriValorChart'), {
         type: 'bar',
         data: {
-            labels: <?= json_encode(array_column($produtos_valor_data, 'nome')) ?>,
+            labels: <?= json_encode(array_column($materiaPri_valor_data, 'nome')) ?>,
             datasets: [{
                 label: 'Valor Total (R$)',
                 data: <?= json_encode(array_map(function ($p) {
                             return floatval($p['valor']);
-                        }, $produtos_valor_data)) ?>,
+                        }, $materiaPri_valor_data)) ?>,
                 backgroundColor: '#10b981'
             }]
         },

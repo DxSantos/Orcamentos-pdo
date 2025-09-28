@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS fornecedores (
     created_at TEXT DEFAULT (datetime('now','localtime'))
 );
 
-CREATE TABLE IF NOT EXISTS produtos (
+CREATE TABLE IF NOT EXISTS materiaPri (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
     preco_unitario REAL NOT NULL DEFAULT 0,
@@ -35,17 +35,17 @@ CREATE TABLE IF NOT EXISTS orcamentos (
 CREATE TABLE IF NOT EXISTS orcamento_itens (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     orcamento_id INTEGER NOT NULL,
-    produto_id INTEGER,
+    materiaPri_id INTEGER,
     descricao TEXT,
     unidade_medida TEXT NOT NULL,
     quantidade REAL NOT NULL DEFAULT 1,
     preco_unitario REAL NOT NULL DEFAULT 0,
     total REAL NOT NULL DEFAULT 0,
     FOREIGN KEY (orcamento_id) REFERENCES orcamentos(id) ON DELETE CASCADE,
-    FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE SET NULL
+    FOREIGN KEY (materiaPri_id) REFERENCES materiaPri(id) ON DELETE SET NULL
 );
 
 -- Índices úteis
 CREATE INDEX IF NOT EXISTS idx_fornecedores_nome ON fornecedores (nome_fantasia);
-CREATE INDEX IF NOT EXISTS idx_produtos_nome ON produtos (nome);
+CREATE INDEX IF NOT EXISTS idx_materiaPri_nome ON materiaPri (nome);
 CREATE INDEX IF NOT EXISTS idx_orcamentos_fornecedor ON orcamentos (fornecedor_id);

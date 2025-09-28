@@ -1,9 +1,9 @@
 # Orçamentos PHP/PDO
 
-Mini-aplicação em PHP/PDO para cadastro de **fornecedores**, **produtos** e **montagem de orçamentos** com:
+Mini-aplicação em PHP/PDO para cadastro de **fornecedores**, **materiaPri** e **montagem de orçamentos** com:
 - Auto-preenchimento por CEP (ViaCEP) para endereço do fornecedor
-- Itens dinâmicos com produtos cadastrados (adicionar/remover linhas)
-- Atualização automática do preço/unidade do produto se alterado no orçamento
+- Itens dinâmicos com materiaPri cadastrados (adicionar/remover linhas)
+- Atualização automática do preço/unidade do materiaPri se alterado no orçamento
 - Geração de PDF (usa dompdf) com nome `NOME_FANTASIA_YYYY-MM-DD_HHMMSS.pdf` salvo em `storage/pdfs`
 - Tela para buscar orçamentos por fornecedor e data, com opção de editar
 
@@ -38,9 +38,9 @@ Edite `config.php` e ajuste o DSN/usuário/senha (comente o SQLite e descomente 
 - `public/`
   - `_header.php`, `_footer.php`, `index.php`
   - `fornecedores.php` (CRUD + ViaCEP)
-  - `produtos.php` (CRUD)
+  - `materiaPri.php` (CRUD)
   - `orcamento_novo.php` (montagem/edição do orçamento com itens dinâmicos)
   - `orcamentos.php` (busca/lista/atalhos para PDF e edição)
   - `orcamento_pdf.php` (gera/baixa/salva PDF)
-  - `assets/api_produtos.php`, `assets/api_fornecedores.php`
+  - `assets/api_materiaPri.php`, `assets/api_fornecedores.php`
 - `storage/pdfs/` (saída dos PDFs)

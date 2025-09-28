@@ -16,7 +16,7 @@ $orcamento = $st->fetch(PDO::FETCH_ASSOC);
 // Buscar itens
 $sti = $pdo->prepare("SELECT oi.*, p.nome 
                       FROM orcamento_itens oi 
-                      LEFT JOIN produtos p ON p.id=oi.produto_id 
+                      LEFT JOIN materiaPri p ON p.id=oi.materiaPri_id 
                       WHERE oi.orcamento_id=?");
 $sti->execute([$id]);
 $itens = $sti->fetchAll(PDO::FETCH_ASSOC);
@@ -37,7 +37,7 @@ $pdf->Ln(5);
 
 // Tabela de itens
 $pdf->SetFont('Arial','B',12);
-$pdf->Cell(80,7,'Produto',1);
+$pdf->Cell(80,7,'materiaPri',1);
 $pdf->Cell(20,7,'Qtd',1);
 $pdf->Cell(30,7,'Preco',1);
 $pdf->Cell(30,7,'Total',1);

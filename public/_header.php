@@ -16,7 +16,7 @@ require __DIR__ . '/../config.php';
     <a class="navbar-brand" href="<?php echo url('index.php'); ?>">Orçamentos</a>
     <div class="navbar-nav">
       <a class="nav-link" href="<?php echo url('fornecedores.php'); ?>">Fornecedores</a>
-      <a class="nav-link" href="<?php echo url('produtos.php'); ?>">Produtos</a>
+      <a class="nav-link" href="<?php echo url('materiaPri.php'); ?>">materiaPri</a>
       <a class="nav-link" href="<?php echo url('orcamento_base.php'); ?>">Orçamento base</a>
       <a class="nav-link" href="<?php echo url('orcamento_novo.php'); ?>">Novo Orçamento</a>
       <a class="nav-link" href="<?php echo url('orcamentos.php'); ?>">Buscar/Editar Orçamentos</a>

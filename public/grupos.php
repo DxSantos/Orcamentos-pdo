@@ -49,7 +49,7 @@ require '_header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h3>Grupos de Produtos</h3>
+  <h3>Grupos de materiaPri</h3>
   <a href="grupos.php" class="btn btn-outline-secondary">Novo</a>
 </div>
 

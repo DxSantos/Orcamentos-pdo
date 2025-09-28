@@ -5,15 +5,15 @@ $q = trim($_GET['q'] ?? '');
 $status = trim($_GET['status'] ?? '');
 $data_inicio = trim($_GET['data_inicio'] ?? '');
 $data_fim = trim($_GET['data_fim'] ?? '');
-$produtos = trim($_GET['produtos'] ?? '');
+$materiaPri = trim($_GET['materiaPri'] ?? '');
 
 $sql = "SELECT o.id, o.data_orcamento, o.status,
                f.nome_fantasia, COALESCE(SUM(oi.total),0) AS total,
-               GROUP_CONCAT(DISTINCT p.nome ORDER BY p.nome SEPARATOR ', ') AS produtos
+               GROUP_CONCAT(DISTINCT p.nome ORDER BY p.nome SEPARATOR ', ') AS materiaPri
         FROM orcamentos o
         JOIN fornecedores f ON f.id=o.fornecedor_id
         LEFT JOIN orcamento_itens oi ON oi.orcamento_id=o.id
-        LEFT JOIN produtos p ON p.id=oi.produto_id
+        LEFT JOIN materiaPri p ON p.id=oi.materiaPri_id
         WHERE 1=1";
 $params = [];
 
@@ -39,9 +39,9 @@ if ($data_fim !== '') {
     $params[] = $data_fim;
 }
 
-// filtro produtos (múltiplos separados por vírgula)
-if ($produtos !== '') {
-    $lista = array_filter(array_map('trim', explode(',', $produtos)));
+// filtro materiaPri (múltiplos separados por vírgula)
+if ($materiaPri !== '') {
+    $lista = array_filter(array_map('trim', explode(',', $materiaPri)));
     if ($lista) {
         $condicoes = [];
         foreach ($lista as $p) {
@@ -89,8 +89,8 @@ require '_header.php';
   </div>
 
   <div class="col-md-3">
-    <label class="form-label">Produtos (separar por vírgula)</label>
-    <input name="produtos" value="<?php echo htmlspecialchars($produtos); ?>" class="form-control" placeholder="Ex: Parafuso, Prego">
+    <label class="form-label">materiaPri (separar por vírgula)</label>
+    <input name="materiaPri" value="<?php echo htmlspecialchars($materiaPri); ?>" class="form-control" placeholder="Ex: Parafuso, Prego">
   </div>
 
   <div class="col-12 mt-3">
@@ -99,7 +99,7 @@ require '_header.php';
   </div>
 </form>
 
-<?php if ($q !== '' || $status !== '' || $data_inicio !== '' || $data_fim !== '' || $produtos !== ''): ?>
+<?php if ($q !== '' || $status !== '' || $data_inicio !== '' || $data_fim !== '' || $materiaPri !== ''): ?>
   <?php if (empty($rows)): ?>
     <div class="alert alert-warning">Nenhum orçamento encontrado com os filtros aplicados.</div>
   <?php else: ?>
@@ -123,7 +123,7 @@ require '_header.php';
         <tr>
           <th>#</th>
           <th>Fornecedor</th>
-          <th>Produtos</th>
+          <th>materiaPri</th>
           <th>Data/Hora</th>
           <th>Status</th>
           <th>Total</th>
@@ -135,7 +135,7 @@ require '_header.php';
           <tr>
             <td><?php echo $r['id']; ?></td>
             <td><?php echo htmlspecialchars($r['nome_fantasia']); ?></td>
-            <td><?php echo htmlspecialchars($r['produtos']); ?></td>
+            <td><?php echo htmlspecialchars($r['materiaPri']); ?></td>
             <td><?php echo date('d/m/Y', strtotime($r['data_orcamento'])); ?></td>
 
             <td>

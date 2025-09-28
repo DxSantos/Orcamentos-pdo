@@ -7,49 +7,51 @@ $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
 // --- SALVAR (INSERT/UPDATE)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = [
-        'nome'           => $_POST['nome'] ?? '',
-        'grupo_id'       => (int) ($_POST['grupo_id'] ?? 0),
-        'tipo'           => $_POST['tipo'] ?? 'insumo',
-        'preco_unitario' => (float) ($_POST['preco_unitario'] ?? 0),
-        'icms'           => (float) ($_POST['icms'] ?? 0),
-        'unidade_medida' => $_POST['unidade_medida'] ?? 'un',
-        'limite_alerta'  => (int) ($_POST['limite_alerta'] ?? 0),
-        'ativo'          => isset($_POST['ativo']) ? (int) $_POST['ativo'] : 1,
+        'nome'              => $_POST['nome'] ?? '',
+        'grupo_id'          => (int) ($_POST['grupo_id'] ?? 0),
+        'tipo'              => $_POST['tipo'] ?? 'insumo',
+        'origem'            => $_POST['origem'] ?? 'comprado',
+        'preco_unitario'    => ($_POST['origem'] === 'comprado') ? (float) ($_POST['preco_unitario'] ?? 0) : 0,
+        'icms'              => ($_POST['origem'] === 'comprado') ? (float) ($_POST['icms'] ?? 0) : 0,
+        'preco_fabricacao'  => ($_POST['origem'] === 'fabricacao') ? (float) ($_POST['preco_fabricacao'] ?? 0) : 0,
+        'unidade_medida'    => $_POST['unidade_medida'] ?? 'un',
+        'limite_alerta'     => (int) ($_POST['limite_alerta'] ?? 0),
+        'ativo'             => isset($_POST['ativo']) ? (int) $_POST['ativo'] : 1,
     ];
 
     if (!empty($_POST['id'])) {
         $data['id'] = (int) $_POST['id'];
-        $sql = "UPDATE produtos 
-                SET nome=:nome, grupo_id=:grupo_id, tipo=:tipo, 
-                    preco_unitario=:preco_unitario, icms=:icms, 
-                    unidade_medida=:unidade_medida, limite_alerta=:limite_alerta, 
+        $sql = "UPDATE materiaPri 
+                SET nome=:nome, grupo_id=:grupo_id, tipo=:tipo, origem=:origem,
+                    preco_unitario=:preco_unitario, icms=:icms, preco_fabricacao=:preco_fabricacao,
+                    unidade_medida=:unidade_medida, limite_alerta=:limite_alerta,
                     ativo=:ativo, updated_at=NOW() 
                 WHERE id=:id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($data);
     } else {
-        $sql = "INSERT INTO produtos 
-                (nome, grupo_id, tipo, preco_unitario, icms, unidade_medida, limite_alerta, ativo) 
-                VALUES (:nome, :grupo_id, :tipo, :preco_unitario, :icms, :unidade_medida, :limite_alerta, :ativo)";
+        $sql = "INSERT INTO materiaPri 
+                (nome, grupo_id, tipo, origem, preco_unitario, icms, preco_fabricacao, unidade_medida, limite_alerta, ativo) 
+                VALUES (:nome, :grupo_id, :tipo, :origem, :preco_unitario, :icms, :preco_fabricacao, :unidade_medida, :limite_alerta, :ativo)";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($data);
     }
 
-    header("Location: produtos.php");
+    header("Location: materiaPri.php");
     exit;
 }
 
 // --- EXCLUIR
 if ($action === 'delete' && $id) {
-    $pdo->prepare("DELETE FROM produtos WHERE id=?")->execute([$id]);
-    header("Location: produtos.php");
+    $pdo->prepare("DELETE FROM materiaPri WHERE id=?")->execute([$id]);
+    header("Location: materiaPri.php");
     exit;
 }
 
 // --- BUSCA PARA EDIÇÃO
 $edit = null;
 if ($action === 'edit' && $id) {
-    $st = $pdo->prepare("SELECT * FROM produtos WHERE id=?");
+    $st = $pdo->prepare("SELECT * FROM materiaPri WHERE id=?");
     $st->execute([$id]);
     $edit = $st->fetch(PDO::FETCH_ASSOC);
 }
@@ -63,8 +65,10 @@ $f_grupo = trim($_GET['f_grupo'] ?? '');
 $f_ativo = trim($_GET['f_ativo'] ?? '');
 
 $sql = "SELECT p.*, g.nome AS grupo_nome,
-               (p.preco_unitario + (p.preco_unitario * (p.icms/100))) AS preco_final
-        FROM produtos p
+               (CASE WHEN p.origem='comprado' 
+                     THEN (p.preco_unitario + (p.preco_unitario * (p.icms/100)))
+                     ELSE p.preco_fabricacao END) AS preco_final
+        FROM materiaPri p
         LEFT JOIN grupos g ON g.id=p.grupo_id
         WHERE 1=1";
 $params = [];
@@ -85,7 +89,7 @@ if ($f_ativo !== '') {
 $sql .= " ORDER BY p.nome";
 $st = $pdo->prepare($sql);
 $st->execute($params);
-$produtos = $st->fetchAll(PDO::FETCH_ASSOC);
+$materiaPri = $st->fetchAll(PDO::FETCH_ASSOC);
 
 require '_header.php';
 ?>
@@ -93,7 +97,7 @@ require '_header.php';
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Cadastro de Produtos</title>
+  <title>Cadastro de Matéria-Prima</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
@@ -101,8 +105,8 @@ require '_header.php';
 <div class="container my-4">
 
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">📦 Cadastro de Produtos</h2>
-    <a href="produtos.php" class="btn btn-outline-secondary">➕ Novo Produto</a>
+    <h2 class="mb-0">🧾 Cadastro de Matéria-Prima</h2>
+    <a href="materiaPri.php" class="btn btn-outline-secondary">➕ Novo</a>
   </div>
 
   <div class="row">
@@ -112,7 +116,7 @@ require '_header.php';
         <div class="card-body">
           <input type="hidden" name="id" value="<?php echo htmlspecialchars($edit['id'] ?? ''); ?>">
 
-          <h5 class="text-primary mb-3">Informações do Produto</h5>
+          <h5 class="text-primary mb-3">Informações</h5>
           <div class="mb-3">
             <label class="form-label fw-bold">Nome *</label>
             <input name="nome" class="form-control" required 
@@ -141,50 +145,69 @@ require '_header.php';
             </div>
           </div>
 
-          <h5 class="text-primary mb-3">Preço & Tributação</h5>
-          <div class="row g-2 mb-3">
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Preço Unitário *</label>
-              <input name="preco_unitario" type="number" step="0.01" class="form-control" required
-                     value="<?php echo htmlspecialchars($edit['preco_unitario'] ?? ''); ?>">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold">ICMS (%)</label>
-              <input name="icms" type="number" step="0.01" class="form-control"
-                     value="<?php echo htmlspecialchars($edit['icms'] ?? '0'); ?>">
-            </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Origem *</label>
+            <select name="origem" id="origem" class="form-select" required onchange="toggleOrigem()">
+              <option value="comprado" <?php if (($edit['origem'] ?? 'comprado') === 'comprado') echo 'selected'; ?>>Comprado</option>
+              <option value="fabricacao" <?php if (($edit['origem'] ?? '') === 'fabricacao') echo 'selected'; ?>>Fabricação Própria</option>
+            </select>
           </div>
 
-          <div class="row g-2 mb-3">
-            <div class="col-md-6">
+          <!-- CAMPOS PARA COMPRADO -->
+          <div id="compradoFields">
+            <h5 class="text-primary mb-3">Preço & Tributação</h5>
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Preço Unitário *</label>
+                <input name="preco_unitario" type="number" step="0.01" class="form-control"
+                       value="<?php echo htmlspecialchars($edit['preco_unitario'] ?? ''); ?>">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">ICMS (%)</label>
+                <input name="icms" type="number" step="0.01" class="form-control"
+                       value="<?php echo htmlspecialchars($edit['icms'] ?? '0'); ?>">
+              </div>
+            </div>
+            <div class="mb-3">
               <label class="form-label fw-bold">Preço Final</label>
               <input id="preco_final" type="text" class="form-control" readonly>
             </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Unidade Medida</label>
-              <input name="unidade_medida" class="form-control"
-                     value="<?php echo htmlspecialchars($edit['unidade_medida'] ?? 'un'); ?>">
+          </div>
+
+          <!-- CAMPOS PARA FABRICAÇÃO -->
+          <div id="fabricacaoFields">
+            <h5 class="text-primary mb-3">Preço Fabricação</h5>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Preço Fabricação *</label>
+              <input name="preco_fabricacao" type="number" step="0.01" class="form-control"
+                     value="<?php echo htmlspecialchars($edit['preco_fabricacao'] ?? ''); ?>">
             </div>
           </div>
 
           <h5 class="text-primary mb-3">Estoque</h5>
           <div class="row g-2 mb-3">
             <div class="col-md-6">
+              <label class="form-label fw-bold">Unidade Medida</label>
+              <input name="unidade_medida" class="form-control"
+                     value="<?php echo htmlspecialchars($edit['unidade_medida'] ?? 'un'); ?>">
+            </div>
+            <div class="col-md-6">
               <label class="form-label fw-bold">Limite para Alerta</label>
               <input name="limite_alerta" type="number" class="form-control"
                      value="<?php echo htmlspecialchars($edit['limite_alerta'] ?? ''); ?>">
             </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Ativo</label>
-              <select name="ativo" class="form-select">
-                <option value="1" <?php if (($edit['ativo'] ?? '1') == '1') echo 'selected'; ?>>Sim</option>
-                <option value="0" <?php if (($edit['ativo'] ?? '') == '0') echo 'selected'; ?>>Não</option>
-              </select>
-            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">Ativo</label>
+            <select name="ativo" class="form-select">
+              <option value="1" <?php if (($edit['ativo'] ?? '1') == '1') echo 'selected'; ?>>Sim</option>
+              <option value="0" <?php if (($edit['ativo'] ?? '') == '0') echo 'selected'; ?>>Não</option>
+            </select>
           </div>
 
           <div class="mt-4 text-end">
-            <button class="btn btn-primary px-4">💾 Salvar Produto</button>
+            <button class="btn btn-primary px-4">💾 Salvar</button>
           </div>
         </div>
       </form>
@@ -193,7 +216,7 @@ require '_header.php';
     <!-- LISTA -->
     <div class="col-lg-7">
       <div class="card shadow-sm border-0 p-3">
-        <h5 class="mb-3">📑 Lista de Produtos</h5>
+        <h5 class="mb-3">📑 Lista de Matérias-Primas</h5>
 
         <!-- FILTROS -->
         <form class="row g-2 mb-3">
@@ -228,8 +251,9 @@ require '_header.php';
           <table class="table table-hover table-sm align-middle">
             <thead class="table-light">
               <tr>
-                <th>Produto</th>
+                <th>Nome</th>
                 <th>Grupo</th>
+                <th>Origem</th>
                 <th>Preço Final</th>
                 <th>UM</th>
                 <th>Ativo</th>
@@ -237,10 +261,11 @@ require '_header.php';
               </tr>
             </thead>
             <tbody>
-            <?php foreach ($produtos as $p): ?>
+            <?php foreach ($materiaPri as $p): ?>
               <tr>
                 <td><?php echo htmlspecialchars($p['nome']); ?></td>
                 <td><?php echo htmlspecialchars($p['grupo_nome']); ?></td>
+                <td><?php echo $p['origem'] === 'comprado' ? 'Comprado' : 'Fabricação'; ?></td>
                 <td>R$ <?php echo number_format($p['preco_final'], 2, ',', '.'); ?></td>
                 <td><?php echo htmlspecialchars($p['unidade_medida']); ?></td>
                 <td>
@@ -252,10 +277,10 @@ require '_header.php';
                 </td>
                 <td class="text-end">
                   <a class="btn btn-sm btn-outline-primary" 
-                     href="produtos.php?action=edit&id=<?php echo $p['id']; ?>">✏️ Editar</a>
+                     href="materiaPri.php?action=edit&id=<?php echo $p['id']; ?>">✏️ Editar</a>
                   <a class="btn btn-sm btn-outline-danger" 
-                     href="produtos.php?action=delete&id=<?php echo $p['id']; ?>"
-                     onclick="return confirm('Excluir este produto?')">🗑️ Excluir</a>
+                     href="materiaPri.php?action=delete&id=<?php echo $p['id']; ?>"
+                     onclick="return confirm('Excluir este materiaPri?')">🗑️ Excluir</a>
                 </td>
               </tr>
             <?php endforeach; ?>
@@ -269,24 +294,25 @@ require '_header.php';
 
 <script>
 function calcularPrecoFinal() {
-  let preco = parseFloat(document.querySelector('[name="preco_unitario"]').value) || 0;
-  let icms = parseFloat(document.querySelector('[name="icms"]').value) || 0;
-  let final = preco + (preco * (icms / 100));
-  document.getElementById('preco_final').value = final.toFixed(2).replace('.', ',');
+  if (document.getElementById('origem').value === 'comprado') {
+    let preco = parseFloat(document.querySelector('[name="preco_unitario"]').value) || 0;
+    let icms = parseFloat(document.querySelector('[name="icms"]').value) || 0;
+    let final = preco + (preco * (icms / 100));
+    document.getElementById('preco_final').value = final.toFixed(2).replace('.', ',');
+  }
+}
+function toggleOrigem() {
+  let origem = document.getElementById('origem').value;
+  document.getElementById('compradoFields').style.display = (origem === 'comprado') ? 'block' : 'none';
+  document.getElementById('fabricacaoFields').style.display = (origem === 'fabricacao') ? 'block' : 'none';
 }
 document.querySelector('[name="preco_unitario"]').addEventListener('input', calcularPrecoFinal);
 document.querySelector('[name="icms"]').addEventListener('input', calcularPrecoFinal);
-window.addEventListener('load', calcularPrecoFinal);
+window.addEventListener('load', function() {
+  toggleOrigem();
+  calcularPrecoFinal();
+});
 </script>
-
 </body>
-
-<style>
-  .containerDiv {
-    max-width: 1200px;
-    margin: 15px;
-  }
-</style>
-
 </html>
 <?php require '_footer.php'; ?>
