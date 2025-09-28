@@ -7,7 +7,7 @@ $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
 // --- SALVAR (INSERT/UPDATE)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = [
-        'nome'              => $_POST['nome'] ?? '',
+        'nome'              => trim($_POST['nome'] ?? ''),
         'grupo_id'          => (int) ($_POST['grupo_id'] ?? 0),
         'tipo'              => $_POST['tipo'] ?? 'insumo',
         'origem'            => $_POST['origem'] ?? 'comprado',
@@ -19,27 +19,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'ativo'             => isset($_POST['ativo']) ? (int) $_POST['ativo'] : 1,
     ];
 
+    // --- Verificar duplicado (mesmo nome, ignorando o id atual)
+    $sqlDup = "SELECT COUNT(*) FROM materiaPri WHERE LOWER(nome)=LOWER(?)";
+    $paramsDup = [$data['nome']];
     if (!empty($_POST['id'])) {
-        $data['id'] = (int) $_POST['id'];
-        $sql = "UPDATE materiaPri 
-                SET nome=:nome, grupo_id=:grupo_id, tipo=:tipo, origem=:origem,
-                    preco_unitario=:preco_unitario, icms=:icms, preco_fabricacao=:preco_fabricacao,
-                    unidade_medida=:unidade_medida, limite_alerta=:limite_alerta,
-                    ativo=:ativo, updated_at=NOW() 
-                WHERE id=:id";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($data);
-    } else {
-        $sql = "INSERT INTO materiaPri 
-                (nome, grupo_id, tipo, origem, preco_unitario, icms, preco_fabricacao, unidade_medida, limite_alerta, ativo) 
-                VALUES (:nome, :grupo_id, :tipo, :origem, :preco_unitario, :icms, :preco_fabricacao, :unidade_medida, :limite_alerta, :ativo)";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($data);
+        $sqlDup .= " AND id<>?";
+        $paramsDup[] = (int) $_POST['id'];
     }
+    $stDup = $pdo->prepare($sqlDup);
+    $stDup->execute($paramsDup);
+    $existe = $stDup->fetchColumn();
 
-    header("Location: materiaPri.php");
-    exit;
+    if ($existe > 0) {
+        $erro = "Já existe uma matéria-prima cadastrada com este nome!";
+    } else {
+        if (!empty($_POST['id'])) {
+            $data['id'] = (int) $_POST['id'];
+            $sql = "UPDATE materiaPri 
+                    SET nome=:nome, grupo_id=:grupo_id, tipo=:tipo, origem=:origem,
+                        preco_unitario=:preco_unitario, icms=:icms, preco_fabricacao=:preco_fabricacao,
+                        unidade_medida=:unidade_medida, limite_alerta=:limite_alerta,
+                        ativo=:ativo, updated_at=NOW() 
+                    WHERE id=:id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($data);
+        } else {
+            $sql = "INSERT INTO materiaPri 
+                    (nome, grupo_id, tipo, origem, preco_unitario, icms, preco_fabricacao, unidade_medida, limite_alerta, ativo) 
+                    VALUES (:nome, :grupo_id, :tipo, :origem, :preco_unitario, :icms, :preco_fabricacao, :unidade_medida, :limite_alerta, :ativo)";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($data);
+        }
+
+        header("Location: materiaPri.php");
+        exit;
+    }
 }
+
 
 // --- EXCLUIR
 if ($action === 'delete' && $id) {
@@ -103,6 +119,14 @@ require '_header.php';
 </head>
 <body class="bg-light">
 <div class="container my-4">
+
+<?php if (!empty($erro)): ?>
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    ⚠️ <?php echo htmlspecialchars($erro); ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+  </div>
+<?php endif; ?>
+
 
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="mb-0">🧾 Cadastro de Matéria-Prima</h2>

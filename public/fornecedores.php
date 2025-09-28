@@ -4,7 +4,27 @@ require __DIR__ . '/../config.php';
 $action = $_GET['action'] ?? 'list';
 $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
+// --- ALERTA CNPJ DUPLICADO
+$alerta_cnpj = '';
+if (isset($_GET['cnpj_duplicado']) && $_GET['cnpj_duplicado'] == 1) {
+    $alerta_cnpj = 'CNPJ já cadastrado!';
+}
+
+// --- SALVAR (INSERT/UPDATE)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    // --- VERIFICA DUPLICIDADE DE CNPJ
+    $cnpj = str_replace(['.', '/', '-'], '', $_POST['cnpj'] ?? '');
+    $sql_check = "SELECT id FROM fornecedores WHERE cnpj=?".(!empty($_POST['id']) ? " AND id<>?" : "");
+    $params_check = [ $cnpj ];
+    if (!empty($_POST['id'])) $params_check[] = $_POST['id'];
+    $stmt_check = $pdo->prepare($sql_check);
+    $stmt_check->execute($params_check);
+    if ($stmt_check->rowCount() > 0) {
+        header("Location: fornecedores.php?cnpj_duplicado=1");
+        exit;
+    }
+
     $data = [
         'razao_social'        => $_POST['razao_social'] ?? '',
         'nome_fantasia'       => $_POST['nome_fantasia'] ?? '',
@@ -16,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'uf'                  => $_POST['uf'] ?? '',
         'email'               => $_POST['email'] ?? '',
         'condicao_pagamento'  => $_POST['condicao_pagamento'] ?? '',
-        'cnpj'                => str_replace(['.', '/', '-'], '', $_POST['cnpj'] ?? ''),
+        'cnpj'                => $cnpj,
         'telefone'            => $_POST['telefone'] ?? '',
     ];
 
@@ -43,13 +63,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// --- EXCLUIR
 if ($action === 'delete' && $id) {
     $pdo->prepare("DELETE FROM fornecedores WHERE id=?")->execute([$id]);
     header("Location: fornecedores.php");
     exit;
 }
 
-// fetch for edit
+// --- BUSCA PARA EDIÇÃO
 $edit = null;
 if ($action === 'edit' && $id) {
     $stmt = $pdo->prepare("SELECT * FROM fornecedores WHERE id=?");
@@ -57,11 +78,22 @@ if ($action === 'edit' && $id) {
     $edit = $stmt->fetch();
 }
 
-// list all
+// --- LISTA
 $fornecedores = $pdo->query("SELECT * FROM fornecedores ORDER BY nome_fantasia")->fetchAll();
 
 require '_header.php';
 ?>
+
+
+
+<!-- ALERTA CNPJ DUPLICADO -->
+<?php if ($alerta_cnpj): ?>
+  <div class="alert alert-warning alert-dismissible fade show" role="alert">
+    ⚠️ <?php echo htmlspecialchars($alerta_cnpj); ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+  </div>
+<?php endif; ?>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h3>Fornecedores</h3>
   <a href="fornecedores.php" class="btn btn-outline-secondary">Novo</a>
