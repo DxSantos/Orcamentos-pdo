@@ -84,9 +84,6 @@ $fornecedores = $pdo->query("SELECT * FROM fornecedores ORDER BY nome_fantasia")
 require '_header.php';
 ?>
 
-
-
-<!-- ALERTA CNPJ DUPLICADO -->
 <?php if ($alerta_cnpj): ?>
   <div class="alert alert-warning alert-dismissible fade show" role="alert">
     ⚠️ <?php echo htmlspecialchars($alerta_cnpj); ?>
@@ -95,20 +92,22 @@ require '_header.php';
 <?php endif; ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h3>Fornecedores</h3>
-  <a href="fornecedores.php" class="btn btn-outline-secondary">Novo</a>
+  <h2 class="mb-0"><i class="bi bi-people"></i> Cadastro de Fornecedores</h2>
+  <a href="fornecedores.php" class="btn btn-outline-secondary">➕ Novo</a>
 </div>
 
 <div class="row">
-  <div class="col-lg-6">
-    <form method="post" class="card shadow-sm p-3">
+  <!-- FORMULÁRIO -->
+  <div class="col-lg-6 mb-4">
+    <form method="post" class="card shadow-sm border-0 p-3">
       <input type="hidden" name="id" value="<?php echo htmlspecialchars($edit['id'] ?? ''); ?>">
+      <h5 class="mb-3">Informações</h5>
       <div class="row g-2">
         <div class="col-md-6">
           <label class="form-label">CNPJ *</label>
           <input id="cnpj" name="cnpj" class="form-control" required 
                  value="<?php echo htmlspecialchars($edit['cnpj'] ?? ''); ?>" 
-                 onblur="buscarCNPJ(this.value)">
+                 onblur="preencherFornecedorPorCNPJ(this.value)">
         </div>
         <div class="col-md-6">
           <label class="form-label">Telefone</label>
@@ -167,84 +166,78 @@ require '_header.php';
                  value="<?php echo htmlspecialchars($edit['condicao_pagamento'] ?? ''); ?>">
         </div>
       </div>
-      <div class="mt-3">
-        <button class="btn btn-primary">Salvar</button>
+      <div class="mt-3 text-end">
+        <button class="btn btn-primary px-4">💾 Salvar</button>
       </div>
     </form>
   </div>
-  <div class="col-lg-6">
-    <div class="card shadow-sm p-3">
-      <h5 class="mb-3">Lista</h5>
+
+  <!-- LISTA -->
+  <div class="col-lg-6 mb-4">
+    <div class="card shadow-sm border-0 p-3">
+      <h5 class="mb-3">📑 Lista de Fornecedores</h5>
       <div class="table-responsive">
-      <table class="table table-sm table-striped">
-        <thead><tr><th>Nome Fantasia</th><th>Cidade</th><th></th></tr></thead>
-        <tbody>
-        <?php foreach ($fornecedores as $f): ?>
-          <tr>
-            <td><?php echo htmlspecialchars($f['nome_fantasia']); ?></td>
-            <td><?php echo htmlspecialchars(($f['cidade'] ?? '') . ' - ' . ($f['uf'] ?? '')); ?></td>
-            <td class="text-end">
-              <a class="btn btn-sm btn-outline-primary" href="fornecedores.php?action=edit&id=<?php echo $f['id']; ?>">Editar</a>
-              <a class="btn btn-sm btn-outline-danger" href="fornecedores.php?action=delete&id=<?php echo $f['id']; ?>" onclick="return confirm('Excluir este fornecedor?')">Excluir</a>
-            </td>
-          </tr>
-        <?php endforeach; ?>
-        </tbody>
-      </table>
+        <table class="table table-hover table-sm align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Nome Fantasia</th>
+              <th>Cidade</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+          <?php foreach ($fornecedores as $f): ?>
+            <tr>
+              <td><?php echo htmlspecialchars($f['nome_fantasia']); ?></td>
+              <td><?php echo htmlspecialchars(($f['cidade'] ?? '') . ' - ' . ($f['uf'] ?? '')); ?></td>
+              <td class="text-end">
+                <a class="btn btn-sm btn-outline-primary" href="fornecedores.php?action=edit&id=<?php echo $f['id']; ?>">✏️ Editar</a>
+                <a class="btn btn-sm btn-outline-danger" href="fornecedores.php?action=delete&id=<?php echo $f['id']; ?>" onclick="return confirm('Excluir este fornecedor?')">🗑️ Excluir</a>
+              </td>
+            </tr>
+          <?php endforeach; ?>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 </div>
 
-
 <script>
-// Função principal: busca dados pelo CNPJ via Minha Receita e preenche todos os campos
 async function preencherFornecedorPorCNPJ(cnpj) {
     cnpj = (cnpj || '').replace(/\D/g,'');
     if(cnpj.length !== 14) return;
 
     try {
-        // 1️⃣ Consulta API Minha Receita
         const r = await fetch(`https://minhareceita.org/${cnpj}`);
         const j = await r.json();
-
         if (!j || j.error) {
             alert('CNPJ não encontrado');
             return;
         }
 
-        // Preenche dados básicos do fornecedor
         document.querySelector('[name="razao_social"]').value = j.razao_social || '';
         document.querySelector('[name="nome_fantasia"]').value = j.nome_fantasia || '';
         document.querySelector('[name="email"]').value = j.email || '';
         document.querySelector('[name="telefone"]').value = j.ddd_telefone_1 || '';
         document.querySelector('[name="numero"]').value = j.numero || '';
 
-        // Preenche CEP se existir
         const cep = (j.cep || '').replace(/\D/g,'');
         if (cep) {
             document.querySelector('[name="cep"]').value = cep;
-
-            // 2️⃣ Consulta ViaCEP para completar endereço
-            try {
-                const rCep = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-                const jCep = await rCep.json();
-                if (jCep && !jCep.erro) {
-                    document.querySelector('[name="endereco"]').value = jCep.logradouro || '';
-                    document.querySelector('[name="bairro"]').value   = jCep.bairro || '';
-                    document.querySelector('[name="cidade"]').value   = jCep.localidade || '';
-                    document.querySelector('[name="uf"]').value       = jCep.uf || '';
-                }
-            } catch(e) {
-                console.error('Erro ao buscar endereço pelo CEP:', e);
+            const rCep = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+            const jCep = await rCep.json();
+            if (jCep && !jCep.erro) {
+                document.querySelector('[name="endereco"]').value = jCep.logradouro || '';
+                document.querySelector('[name="bairro"]').value   = jCep.bairro || '';
+                document.querySelector('[name="cidade"]').value   = jCep.localidade || '';
+                document.querySelector('[name="uf"]').value       = jCep.uf || '';
             }
         } else {
-            // Se não tiver CEP, usa os dados retornados pela Minha Receita
             document.querySelector('[name="endereco"]').value = j.logradouro || '';
             document.querySelector('[name="bairro"]').value   = j.bairro || '';
             document.querySelector('[name="cidade"]').value   = j.municipio || '';
             document.querySelector('[name="uf"]').value       = j.uf || '';
-            
         }
 
     } catch(e) {
@@ -253,13 +246,9 @@ async function preencherFornecedorPorCNPJ(cnpj) {
     }
 }
 
-// Dispara a função ao perder foco do campo CNPJ
 document.querySelector('[name="cnpj"]').addEventListener('blur', function(){
     preencherFornecedorPorCNPJ(this.value);
 });
 </script>
-
-
-
 
 <?php require '_footer.php'; ?>

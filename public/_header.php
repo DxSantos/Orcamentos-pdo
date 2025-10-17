@@ -1,51 +1,63 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
+
+// Detecta o caminho base automaticamente
+$base_url = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
   <meta charset="UTF-8">
-  <title>Sistema de Produção</title>
+  <title>Sistema ERP</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+
+  <!-- BOOTSTRAP -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">  
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  
+
+  <!-- ÍCONES -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- CSS LOCAL -->
   <link rel="stylesheet" href="assets/css/style.css">
-  <script src="assets/js/custom.js" defer></script>
+
+  <!-- JS LOCAL -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="<?= $base_url ?>assets/js/custom.js" defer></script>
 
   <style>
-    /* SIDEBAR FIXO */
     body {
       display: flex;
       min-height: 100vh;
       background-color: #f8fafc;
+      font-family: "Segoe UI", Arial, sans-serif;
     }
 
     .sidebar {
       width: 240px;
-      background-color: #0d6efd;
+      background: linear-gradient(180deg, #0d6efd 0%, #0149b5 100%);
       color: white;
-      flex-shrink: 0;
       display: flex;
       flex-direction: column;
       position: fixed;
       top: 0;
       left: 0;
       height: 100%;
-      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
       z-index: 1000;
+      border-right: 1px solid rgba(255, 255, 255, 0.15);
     }
 
     .sidebar .brand {
-      font-size: 1.3rem;
+      font-size: 1.4rem;
       font-weight: 600;
-      padding: 20px;
       text-align: center;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 22px 10px;
       background-color: rgba(0, 0, 0, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      letter-spacing: 0.5px;
     }
 
     .sidebar ul {
@@ -56,12 +68,14 @@ if (session_status() === PHP_SESSION_NONE) session_start();
     }
 
     .sidebar ul li {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .sidebar ul li a {
-      display: block;
-      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 20px;
       color: #e9ecef;
       text-decoration: none;
       font-weight: 500;
@@ -77,18 +91,36 @@ if (session_status() === PHP_SESSION_NONE) session_start();
     .sidebar ul li a i {
       width: 22px;
       text-align: center;
-      margin-right: 8px;
+      font-size: 1.1rem;
+    }
+
+    .sidebar .logout {
+      text-align: center;
+      padding: 15px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar .logout a {
+      color: white;
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 6px 18px;
+      text-decoration: none;
+      transition: 0.3s;
+    }
+
+    .sidebar .logout a:hover {
+      background-color: rgba(255, 255, 255, 0.3);
     }
 
     main {
       flex-grow: 1;
       margin-left: 240px;
-      padding: 20px 30px;
+      padding: 25px 35px;
     }
 
     @media (max-width: 991px) {
       .sidebar {
-        position: fixed;
         transform: translateX(-100%);
         transition: transform 0.3s ease-in-out;
       }
@@ -110,7 +142,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
         color: #fff;
         border: none;
         border-radius: 6px;
-        padding: 8px 10px;
+        padding: 8px 12px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
       }
     }
   </style>
@@ -125,19 +158,18 @@ if (session_status() === PHP_SESSION_NONE) session_start();
   <!-- MENU LATERAL -->
   <nav class="sidebar">
     <div class="brand">⚙️ Sistema ERP</div>
-     <ul>
-    <li><a href="index.php" class="<?= basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : '' ?>"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-    <li><a href="materiaPri.php" class="<?= basename($_SERVER['PHP_SELF']) == 'materiaPri.php' ? 'active' : '' ?>"><i class="bi bi-box"></i> Matéria-Prima</a></li>
-    <li><a href="fornecedores.php" class="<?= basename($_SERVER['PHP_SELF']) == 'fornecedores.php' ? 'active' : '' ?>"><i class="bi bi-people"></i> Fornecedores</a></li>
-    <li><a href="orcamento_base.php" class="<?= basename($_SERVER['PHP_SELF']) == 'orcamento_base.php' ? 'active' : '' ?>"><i class="bi bi-file-earmark-plus"></i> Novo Orçamento</a></li>
-    <li><a href="orcamentos.php" class="<?= basename($_SERVER['PHP_SELF']) == 'orcamentos.php' ? 'active' : '' ?>"><i class="bi bi-file-earmark-text"></i> Orçamentos</a></li>
-    <li><a href="produtos.php" class="<?= basename($_SERVER['PHP_SELF']) == 'produtos.php' ? 'active' : '' ?>"><i class="bi bi-layers"></i> Produtos</a></li>
-    <li><a href="estoque.php" class="<?= basename($_SERVER['PHP_SELF']) == 'estoque.php' ? 'active' : '' ?>"><i class="bi bi-archive"></i> Estoque</a></li>
-    <li><a href="dashboard_orcamentos.php" class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard_orcamentos.php' ? 'active' : '' ?>"><i class="bi bi-bar-chart-line"></i> Dashboard Orçamentos</a></li>
-    <li><a href="relatorios.php" class="<?= basename($_SERVER['PHP_SELF']) == 'relatorios.php' ? 'active' : '' ?>"><i class="bi bi-journal-text"></i> Relatórios</a></li>
-  </ul>
-    <div class="text-center mb-3">
-      <a href="/logout.php" class="btn btn-sm btn-light px-4">Sair</a>
+    <ul>
+      <li><a href="<?= $base_url ?>/index.php" class="<?= basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : '' ?>"><i class="bi bi-speedometer2"></i> Início</a></li>
+      <li><a href="<?= $base_url ?>/fornecedores.php" class="<?= basename($_SERVER['PHP_SELF']) == 'fornecedores.php' ? 'active' : '' ?>"><i class="bi bi-people"></i> Fornecedores</a></li>
+      <li><a href="<?= $base_url ?>/materiaPri.php" class="<?= basename($_SERVER['PHP_SELF']) == 'materiaPri.php' ? 'active' : '' ?>"><i class="bi bi-box"></i> Matéria-Prima</a></li>
+      <li><a href="<?= $base_url ?>/orcamento_base.php" class="<?= basename($_SERVER['PHP_SELF']) == 'orcamento_base.php' ? 'active' : '' ?>"><i class="bi bi-journal-text"></i> Orçamento Base</a></li>
+      <li><a href="<?= $base_url ?>/orcamento_novo.php" class="<?= basename($_SERVER['PHP_SELF']) == 'orcamento_novo.php' ? 'active' : '' ?>"><i class="bi bi-file-plus"></i> Novo Orçamento</a></li>
+      <li><a href="<?= $base_url ?>/orcamentos.php" class="<?= basename($_SERVER['PHP_SELF']) == 'orcamentos.php' ? 'active' : '' ?>"><i class="bi bi-file-earmark-text"></i> Orçamentos</a></li>
+      <li><a href="<?= $base_url ?>/dashboard_orcamentos.php" class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard_orcamentos.php' ? 'active' : '' ?>"><i class="bi bi-graph-up"></i> Dashboard Orçamentos</a></li>
+    </ul>
+
+    <div class="logout">
+      <a href="<?= $base_url ?>/logout.php"><i class="bi bi-box-arrow-right"></i> Sair</a>
     </div>
   </nav>
 

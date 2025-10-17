@@ -11,14 +11,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $pdo->beginTransaction();
     try {
-        // Limpa base antiga do fornecedor
         $pdo->prepare("DELETE FROM orcamento_base WHERE fornecedor_id=?")->execute([$fornecedor_id]);
-
         $stmt = $pdo->prepare("INSERT INTO orcamento_base (fornecedor_id, materiaPri_id) VALUES (?,?)");
         foreach ($itens as $materiaPri_id) {
             $stmt->execute([$fornecedor_id, $materiaPri_id]);
         }
-
         $pdo->commit();
         echo "<div class='alert alert-success'>Orçamento Base salvo!</div>";
     } catch (Throwable $e) {
@@ -28,33 +25,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<h3>Orçamento Base</h3>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>📋 Orçamento Base</h3>
+</div>
 
-<form method="post" onsubmit="return beforeSubmitBase()">
-    <div class="mb-3">
-        <label>Fornecedor</label>
-        <select id="fornecedorSelect" name="fornecedor_id" class="form-select" required>
-            <option value="">Selecione...</option>
-            <?php foreach ($fornecedores as $f): ?>
-                <option value="<?= $f['id'] ?>"><?= htmlspecialchars($f['nome_fantasia']) ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+<div class="card shadow-sm border-0 p-3 mb-4">
+    <form method="post" onsubmit="return beforeSubmitBase()">
+        <div class="mb-3">
+            <label class="form-label">Fornecedor</label>
+            <select id="fornecedorSelect" name="fornecedor_id" class="form-select" required>
+                <option value="">Selecione...</option>
+                <?php foreach ($fornecedores as $f): ?>
+                    <option value="<?= $f['id'] ?>"><?= htmlspecialchars($f['nome_fantasia']) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
 
-    <table class="table table-bordered" id="itensBaseTable">
-        <thead>
-            <tr>
-                <th>Itens</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-    <button type="button" class="btn btn-sm btn-success mb-2" onclick="addRowBase()">+ Adicionar item</button>
-
-    <input type="hidden" name="itens_json" id="itens_json">
-    <button class="btn btn-primary">Salvar Base</button>
-</form>
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm" id="itensBaseTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Itens</th>
+                        <th style="width:50px;"></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <button type="button" class="btn btn-sm btn-success mb-2" onclick="addRowBase()">+ Adicionar item</button>
+        <input type="hidden" name="itens_json" id="itens_json">
+        <div class="text-end">
+            <button class="btn btn-primary">💾 Salvar Base</button>
+        </div>
+    </form>
+</div>
 
 <script>
 const materiaPri = <?php echo json_encode($materiaPri, JSON_UNESCAPED_UNICODE); ?>;
@@ -76,13 +80,10 @@ function addRowBase(materiaPriId = '') {
     if(materiaPriId) tr.querySelector('select').value = materiaPriId;
 }
 
-// Carrega itens ao escolher fornecedor
 fornecedorSelect.addEventListener('change', () => {
     const fornecedorId = fornecedorSelect.value;
     tabelaItensBase.innerHTML = '';
-
     if(!fornecedorId) return;
-
     fetch(`get_orcamento_base.php?fornecedor_id=${fornecedorId}`)
         .then(res => res.json())
         .then(itens => {

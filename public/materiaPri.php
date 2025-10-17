@@ -1,4 +1,10 @@
 <?php
+
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+session_start();
+
 require __DIR__ . '/../config.php';
 
 $action = $_GET['action'] ?? 'list';
@@ -110,7 +116,9 @@ $materiaPri = $st->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <body>
-  <?php require '_header.php'; ?>
+  <?php require __DIR__ . '/_header.php'; ?>
+  
+
 
   <div class="container my-4">
 
@@ -336,5 +344,5 @@ $materiaPri = $st->fetchAll(PDO::FETCH_ASSOC);
     });
   </script>
 </body>
-</html>
 <?php require '_footer.php'; ?>
+</html>
